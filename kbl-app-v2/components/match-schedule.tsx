@@ -247,7 +247,7 @@ if (loading) {
                         key={match.id}
                         ref={matchStatus === "today" ? todayMatchRef : null} // Attach ref only to today's match
                         className={`overflow-hidden match-card 
-                          ${matchStatus === "today" ? "border-2 border-yellow-500 bg-[rgba(255,255,100,0.3)] dark:bg-[rgba(255,255,100,0.3)] dark:border-yellow-400" : ""} 
+                          ${matchStatus === "today" ? "border-2 border-t-8 border-yellow-500 dark:border-yellow-400" : ""} 
                           ${matchStatus === "past" ? "opacity-50 dark:opacity-40" : ""}
                         `}
                       >

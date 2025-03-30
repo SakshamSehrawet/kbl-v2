@@ -17,7 +17,9 @@ import { LastUpdatedIndicator } from "@/components/last-updated-indicator"
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b bg-background dark:bg-background">
+
+
         <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0">
           <div className="flex gap-2 items-center">
             <Trophy className="h-6 w-6 text-primary" />
@@ -47,7 +49,7 @@ export default function Home() {
       </header>
 
       <main className="flex-1 py-2" id="dashboard">
-        <div className="container px-1 md:px-6">
+        <div className="container px-[2px] md:px-6">
           <Tabs defaultValue="leaderboard" className="mt-8">
             <TabsList className="grid w-full grid-cols-3 mb-8">
               <TabsTrigger value="leaderboard" className="text-sm sm:text-base">
@@ -60,19 +62,18 @@ export default function Home() {
                 Schedule
               </TabsTrigger>
             </TabsList>
-            <TabsContent value="leaderboard" className="mt-6 space-y-8">
+            <TabsContent value="leaderboard" className=" mt-6 space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card className="md:col-span-3 team-card">
                   <CardHeader>
                     <div className="flex justify-between items-center">
                       <CardTitle className="flex items-center">
-                        <Trophy className="h-5 w-5 mr-2 text-yellow-500" />
                         Current Standings
                       </CardTitle>
                       <LastUpdatedIndicator />
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent >
                     <Suspense fallback={<LeaderboardSkeleton />}>
                       <LeaderboardTable />
                     </Suspense>
@@ -110,7 +111,7 @@ export default function Home() {
         </div>
       </main>
 
-      <footer className="border-t py-6 md:py-0">
+      <footer className="border-t py-6 md:py-0 bg-background dark:bg-background">
         <div className="container flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row">
           <Link href="https://dream11.com" target="_blank">
             <Button variant="ghost" size="icon">

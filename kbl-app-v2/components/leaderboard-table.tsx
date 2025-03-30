@@ -1,13 +1,15 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Trophy, ChevronUp, ChevronDown, Minus } from "lucide-react"
-
+import { useEffect, useState, useRef } from "react"
+import { Trophy, ChevronUp, ChevronDown, Minus, Star, Share2, Camera  } from "lucide-react"
+import html2canvas from "html2canvas"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { fetchLeaderboardData } from "@/lib/sheets-api"
 
+import CommitGraph from "@/components/animata/graphs/commit-graph"
 interface LeaderboardEntry {
   rank: number
   team: string
@@ -15,11 +17,17 @@ interface LeaderboardEntry {
   points: number
   previousRank?: number
   owner?: string
+  matches?: Array<{
+    match: number
+    score: number
+    points: number
+  }>
 }
 
 export default function LeaderboardTable() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const leaderboardRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     async function loadData() {
@@ -52,6 +60,7 @@ export default function LeaderboardTable() {
     return () => clearInterval(intervalId)
   }, [])
 
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-20">
@@ -81,27 +90,54 @@ export default function LeaderboardTable() {
     if (!previous || current === previous) return <Minus className="h-4 w-4 text-gray-400" />
     return current < previous ? (
       <div className="flex items-center text-green-500">
-        <ChevronUp className="h-4 w-4 mr-1" />
+        <ChevronUp className="h-6 w-6 mr-1" />
         <span className="text-xs">{previous - current}</span>
       </div>
     ) : (
       <div className="flex items-center text-red-500">
-        <ChevronDown className="h-4 w-4 mr-1" />
+        <ChevronDown className="h-6 w-6 mr-1" />
         <span className="text-xs">{current - previous}</span>
       </div>
     )
+  }
+
+  // Convert match data to commit graph format
+  const getCommitGraphData = (matches?: Array<{ match: number; points: number }>) => {
+    if (!matches || matches.length === 0) {
+      return [Array(7).fill(0)]
+    }
+
+    // Create a 2D array for the commit graph
+    // We'll use a single row with points data
+    const graphData: number[][] = []
+
+    // Group matches into weeks (7 matches per week)
+    const maxMatch = Math.max(...matches.map((m) => m.match))
+    const weeks = Math.ceil(maxMatch / 2)
+
+    for (let week = 0; week < weeks; week++) {
+      const weekData: number[] = []
+      for (let day = 0; day < 2; day++) {
+        const matchNumber = week * 2 + day + 1
+        const match = matches.find((m) => m.match === matchNumber)
+        weekData.push(match ? Math.min(3, Math.floor(match.points / 3)) : 0)
+      }
+      graphData.push(weekData)
+    }
+
+    return graphData
   }
 
   // Get teams that rank 1, 2, or 3 (considering ties)
   const topTeams = leaderboard.filter((entry) => entry.rank <= 3)
 
   return (
-    <div className="space-y-6">
+    <div  className="space-y-6 bg-transparent hover:bg-transparent">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {topTeams.map((entry) => (
           <Card
             key={entry.team}
-            className={`overflow-hidden ${entry.rank === 1 ? "border-yellow-500" : entry.rank === 2 ? "border-gray-400" : "border-amber-700"}`}
+            className={`overflow-hidden bg-transparent hover:bg-transparent ${entry.rank === 1 ? "border-yellow-500" : entry.rank === 2 ? "border-gray-400" : "border-amber-700"}`}
           >
             <div className={`h-2 ${entry.rank === 1 ? "bg-yellow-500" : entry.rank === 2 ? "bg-gray-400" : "bg-amber-700"}`}></div>
             <CardContent className="pt-6 flex items-center justify-between">
@@ -129,21 +165,24 @@ export default function LeaderboardTable() {
         ))}
       </div>
 
-      <div className="rounded-md border overflow-hidden">
+      <div ref={leaderboardRef} className="px-[2px]rounded-md border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="w-[80px]">Rank</TableHead>
               <TableHead>Team</TableHead>
-              <TableHead>Owner</TableHead>
-              <TableHead className="text-center">Matches</TableHead>
-              <TableHead className="text-center">Points</TableHead>
-              <TableHead className="text-right w-[100px]">Movement</TableHead>
+              <TableHead className="text-center w-[100px]">Points</TableHead>
+              <TableHead className="items-center w-[100px]">Movement</TableHead>
+              <TableHead className="text-center">History</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {leaderboard.map((entry) => (
-              <TableRow key={entry.team} className={entry.rank <= 3 ? "bg-muted/30" : ""}>
+            {leaderboard.map((entry) => {
+              // Convert match data to commit graph format
+              const commitGraphData = getCommitGraphData(entry.matches)
+
+              return (
+              <TableRow key={entry.team} className={entry.rank <= 3 ? "bg-muted/10" : ""}>
                 <TableCell className="font-medium">
                   <div className="flex items-center">
                     {entry.rank <= 3 && <Trophy className={`h-5 w-5 mr-1 ${entry.rank === 1 ? "text-yellow-500" : entry.rank === 2 ? "text-gray-400" : "text-amber-700"}`} />}
@@ -151,19 +190,31 @@ export default function LeaderboardTable() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Avatar className={`h-8 w-8 ${getAvatarColor(entry.team)}`}>
-                      <AvatarFallback>{getInitials(entry.team)}</AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium">{entry.team.split(" (")[0]}</span>
+                    <div className="flex items-center gap-2">
+                      <Avatar className={`h-8 w-8 ${getAvatarColor(entry.team)}`}>
+                        <AvatarFallback>{getInitials(entry.team)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <span className="font-medium">{entry.team.split(" (")[0]}</span>
+                        <span className="text-xs text-muted-foreground block">{entry.owner}</span>
+                      </div>
+                    </div>
+                </TableCell>
+                <TableCell className="text-center">
+                  <div>
+                    <span className="font-medium">{entry.points}</span>
+                    <span className="text-xs text-muted-foreground block">{entry.matchesPlayed}</span>
                   </div>
                 </TableCell>
-                <TableCell>{entry.owner}</TableCell>
-                <TableCell className="text-center">{entry.matchesPlayed}</TableCell>
-                <TableCell className="text-center font-bold">{entry.points}</TableCell>
-                <TableCell className="text-right">{getRankChange(entry.rank, entry.previousRank)}</TableCell>
+                <TableCell className="flex flex-col items-center justify-center">{getRankChange(entry.rank, entry.previousRank)}</TableCell>
+                  <TableCell className="text-center font-bold relative">
+                    <div className=" items-center justify-center overflow-hidden">
+                    <CommitGraph data={commitGraphData} colorScheme="default" rank={entry.rank} />
+                    </div>
+                  </TableCell>
               </TableRow>
-            ))}
+              )
+            })}
           </TableBody>
         </Table>
       </div>

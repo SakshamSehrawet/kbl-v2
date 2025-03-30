@@ -26,6 +26,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { fetchTeamPerformanceData } from "@/lib/sheets-api"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { LastUpdatedIndicator } from "./last-updated-indicator"
 
 interface MatchPerformance {
   match: string
@@ -183,13 +184,10 @@ export default function TeamPerformance() {
     return colors[hash % colors.length]
   }
 
-  // Format the last updated timestamp
-  const formattedLastUpdated = lastRefreshed
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-sm text-muted-foreground">Last refreshed: {formattedLastUpdated}</h3>
+        <LastUpdatedIndicator></LastUpdatedIndicator>
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
@@ -257,41 +255,6 @@ export default function TeamPerformance() {
                         }}
                       />
                     </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <h3 className="text-lg font-semibold mb-4">Match-wise Performance</h3>
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={matchWiseChartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="match" />
-                      <YAxis />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "var(--background)",
-                          border: "1px solid var(--border)",
-                          borderRadius: "0.5rem",
-                          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                        }}
-                      />
-                      <Legend />
-                      {teamData.slice(0, 8).map((team, index) => (
-                        <Line
-                          key={team.team}
-                          type="monotone"
-                          dataKey={team.team}
-                          stroke={COLORS[index % COLORS.length]}
-                          strokeWidth={2}
-                          dot={{ r: 4 }}
-                          activeDot={{ r: 6 }}
-                        />
-                      ))}
-                    </LineChart>
                   </ResponsiveContainer>
                 </div>
               </CardContent>
