@@ -14,7 +14,7 @@ export async function GET() {
 
     const sheets = google.sheets({ version: "v4", auth })
     const spreadsheetId = process.env.SPREADSHEET_ID
-    const range = "Scoring!A1:Z100" // Ensure it covers all required columns
+    const range = "Scoring!A1:ZZ100" // Ensure it covers all required columns
 
     const response = await sheets.spreadsheets.values.get({ spreadsheetId, range })
 
